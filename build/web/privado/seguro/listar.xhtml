@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:h="http://xmlns.jcp.org/jsf/html" xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui" xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <ui:composition template="/templates/template.xhtml">
+        <ui:define name="titulo">Listagem de Seguros</ui:define>
+        <ui:define name="conteudo">
+            <h:form id="formListagem" prependId="false">
+                <!--p:messages/-->
+                <p:growl/>
+                <p:commandButton value="Novo" action="#{controleSeguro.novo()}" update="formEdicao" 
+                                 process="@form" icon="ui-icon-plus" oncomplete="PF('dlg').show();"/>
+                <!--############################################################ FILTRO E PAGINAÇÃO-->
+                <div align="center">
+                    <p:panelGrid columns="11">
+                        <p:outputLabel value="Ordem: "/>
+                        <p:selectOneMenu id="ordem" value="#{controleSeguro.dao.ordem}">
+                            <f:selectItem itemLabel="ID" itemValue="id"/>
+                            <f:selectItem itemLabel="Placa" itemValue="placa"/>
+                            <f:selectItem itemLabel="Modelo" itemValue="modelo"/>
+                            <p:ajax update="listagem"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel value="Filtro: "/>
+                        <p:inputText value="#{controleSeguro.dao.filtro}">
+                            <p:ajax event="keyup" update="listagem"/>
+                        </p:inputText>
+                        <p:commandButton value="Filtrar" update="listagem"/>
+                        <p:outputLabel value="Máximo de Objetos: "/>
+                        <p:inputNumber value="#{controleSeguro.dao.maximoObjetos}" size="3"
+                                       thousandSeparator="" decimalSeparator="" decimalPlaces="0">
+                            <p:ajax event="keyup" update="listagem"/>
+                        </p:inputNumber>
+                        <p:commandButton actionListener="#{controleSeguro.dao.primeiro()}"
+                                         title="Primeiro" icon="ui-icon-seek-first" update="listagem"/>
+                        <p:commandButton actionListener="#{controleSeguro.dao.anterior()}"
+                                         title="Anterior" icon="ui-icon-seek-prev" update="listagem"/>
+                        <p:commandButton actionListener="#{controleSeguro.dao.proximo()}"
+                                         title="Próximo" icon="ui-icon-seek-next" update="listagem"/>
+                        <p:commandButton actionListener="#{controleSeguro.dao.ultimo()}"
+                                         title="Último" icon="ui-icon-seek-end" update="listagem"/>
+                    </p:panelGrid>
+                </div>
+                <!--################################################################### LISTAGEM-->
+                <p:dataTable value="#{controleSeguro.dao.listaObjetos}" var="item" id="listagem">
+                    <f:facet name="footer">
+                        <p:outputLabel value="#{controleSeguro.dao.mensagemNavegacao}"/>
+                    </f:facet>
+                    <p:column headerText="ID">
+                        <p:outputLabel value="#{item.id}"/>
+                    </p:column>
+                    <p:column headerText="Cliente">
+                        <p:outputLabel value="#{item.carro.pessoa.nome}"/>
+                    </p:column>
+                    <p:column headerText="Veiculo">
+                        <p:outputLabel value="#{item.carro.modelo}"/>
+                    </p:column>
+                    <p:column headerText="Valor Fipe">
+                        <p:outputLabel value="#{item.valorFipe}"/>
+                    </p:column>
+                    <p:column headerText="Valor Total">
+                        <p:outputLabel value="#{item.valorTotal}"/>
+                    </p:column>
+                    <p:column headerText="Corretor">
+                        <p:outputLabel value="#{item.corretor.nome}"/>
+                    </p:column>
+                    <p:column headerText="Ações" width="10%">
+                        <p:commandButton action="#{controleSeguro.editar(item.id)}" icon="ui-icon-pencil"
+                                         title="Editar" oncomplete="PF('dlg').show();" update="formEdicao"
+                                         process="@form"/>
+                        <p:commandButton action="#{controleSeguro.remover(item.id)}"
+                                         icon="ui-icon-trash" title="Remover" update="@form" process="@form"
+                                         onclick="if (!confirm('Confirma a exclusão')) return false"/>
+                    </p:column>
+                </p:dataTable>
+            </h:form>
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog header="Edição" widgetVar="dlg" resizable="false" modal="true"
+                      width="50%" height="100%" position="top">
+                <h:form id="formEdicao" prependId="false">
+                    <p:growl id="growl"/>
+                    <p:tabView id="tab" prependId="false">
+                        <!--############################################# TAB DADOS-->
+                        <p:tab title="Dados">
+                            <div align="center">
+                                <p:panelGrid columns="2">
+                                    <p:outputLabel value="ID"/>
+                                    <p:inputText value="#{controleSeguro.obj.id}" readonly="true" size="5"/>
+                                    <p:outputLabel value="Veículo"/>
+                                    <p:selectOneMenu value="#{controleSeguro.obj.carro}" id="selectCarro"
+                                                     filter="true" filterMatchMode="startWith">
+                                        <f:converter converterId="converterCarro"/>
+                                        <f:selectItem noSelectionOption="true" itemLabel="Selecione um registro"/>
+                                        <f:selectItems value="#{controleSeguro.daoCarro.listaTodos}"
+                                                       var="c" itemLabel="#{c.placa}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="Corretor"/>
+                                    <p:selectOneMenu value="#{controleSeguro.obj.corretor}" id="selectPessoa"
+                                                     filter="true" filterMatchMode="startWith">
+                                        <f:converter converterId="converterCorretor"/>
+                                        <f:selectItem noSelectionOption="true" itemLabel="Selecione um registro"/>
+                                        <f:selectItems value="#{controleSeguro.daoCorretor.listaTodos}"
+                                                       var="c" itemLabel="#{c.nome}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel value="Início Vigência"/>
+                                    <p:calendar value="#{controleSeguro.obj.inicioVigencia}"
+                                                id="txtDataInicio" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    <p:outputLabel value="Fim Vigência"/>
+                                    <p:calendar value="#{controleSeguro.obj.fimVigencia}"
+                                                id="txtDataFinal" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    <p:outputLabel value="Valor Fipe"/>
+                                    <p:inputText value="#{controleSeguro.obj.valorFipe}"
+                                                 id="txtValorFipe" size="10" type="number" />
+                                    <p:outputLabel value="Valor Total"/>
+                                    <p:inputText value="#{controleSeguro.obj.valorTotal}"
+                                                 id="txtValorTotal" size="10" type="number" />
+                                </p:panelGrid>
+                            </div>
+                        </p:tab>
+                    </p:tabView>
+                    <!--############################################# BOTAO SALVAR-->
+                    <p:panel>
+                        <div align="center">
+                            <p:commandButton value="Salvar" icon="ui-icon-disk" actionListener="#{controleSeguro.salvar()}"
+                                             oncomplete="if(!args.validationFailed){PF('dlg').hide();}"
+                                             update="formEdicao formListagem"/>
+                        </div>
+                    </p:panel>
+                </h:form>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>
